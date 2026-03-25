@@ -1,2 +1,2 @@
-# prj1-ed2
-Projeto 1 da Disciplina Estrutura de Dados 2 - Dados das Estações e Linhas de Metrô CPTM
+# Projeto 1 - Estrutura de Dados 2
+Armazenamento e recuperação de Dados das Estações e Linhas de Metrô CPTM
