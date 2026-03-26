@@ -95,3 +95,7 @@ Observacoes:
  - nomeEstacao: nome da estacao
  - nomeLinha: nome da linha
 */
+
+int main() {
+    return 0;
+}
