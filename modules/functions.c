@@ -3,6 +3,7 @@
 #include <string.h>
 #include "utils.c"
 #include "structs.c"
+#define LINE_SIZE 1200 // Tamanho maximo de uma linha do arquivo .csv
 
 // Descricao das funcoes utilizadas no programa // 
 
@@ -25,13 +26,68 @@ SAIDA:
  1 estacao.csv estacao.bin
 */
 
-void createTable (char *arquivoEntrada, char *arquivoSaida){
+    void createTable (char *arquivoEntrada, char *arquivoSaida){
 
-    FILE *csvFile = fopen(arquivoEntrada, "r");
-    FILE *binFile = fopen(arquivoSaida, "wb");
+        // Abrir os arquivos de entrada e saida
+
+        FILE *csvFile = fopen(arquivoEntrada, "r"); // Abre para leitura
+        if (csvFile == NULL) { // Verifica se abriu corretamente
+            printf("Falha no processamento do arquivo.\n");
+            return;
+        }
+
+        FILE *binFile = fopen(arquivoSaida, "wb"); // Abre para escrita, se ja existe, sobrescreve
+        if (binFile == NULL) { // Verifica se abriu corretamente
+            printf("Falha no processamento do arquivo.\n");
+            fclose(csvFile); // Se o segundo arquivo falhou, temos que fechar o primeiro, ja que ele passou pela verificacao
+            return;
+        }
+
+        // Leitura do arquivo .csv e escrita no arquivo .bin
+
+        char line[LINE_SIZE];
+
+        // Cria-se a struct do cabecalho e inicializa seus campos
+        HeaderRecord header;
+        header.status = '0';
+        header.topo = -1;
+        header.proxRRN = 0;
+        header.nroEstacoes = 0;
+        header.nroParesEstacao = 0;
+
+        // Escreve o cabecalho inicial no .bin
+        fwrite(&header.status, sizeof(char), 1, binFile);
+        fwrite(&header.topo, sizeof(int), 1, binFile);
+        fwrite(&header.proxRRN, sizeof(int), 1, binFile);
+        fwrite(&header.nroEstacoes, sizeof(int), 1, binFile);
+        fwrite(&header.nroParesEstacao, sizeof(int), 1, binFile);
+
+        // Leitura das linhas
+        readCSVLine(line, LINE_SIZE, csvFile); // Devemos ignorar a primeira linha, ja que se trata do cabecalho do arquivo
+
+        while (readCSVLine(line, LINE_SIZE, csvFile) != NULL) { // Leitura do restante das linhas
+
+            DataRecord data; // Criacao da struct do registro de dados
+        
+            for (int i = 0; i < 8; i++){  // loop para ler os fields da linha
+
+                char *lineCopy = strdup(line); // Criar uma copia da linha para evitar modificar o original
+                char *field = parseCSVField(lineCopy, i); // Funcao que vai retornar o conteudo do field, de acordo com o indice passado
+
+                switchDataRecord(&data, i, field); // atribui os valores de cada field a struct de dados
+                
+                free(lineCopy); // Liberar a memoria alocada para a copia da linha
+                free(field);
+            }
 
 
 
+
+            free(data.nomeEstacao); 
+            if (data.nomeLinha != NULL){ // Liberar a memoria alocada caso ele nao seja nulo
+            free(data.nomeLinha);
+            }
+        }
 }
 
 /*

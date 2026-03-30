@@ -112,7 +112,7 @@ typedef struct dataRecord{
     int proximo;
 
     // Tamanho Fixo  
-    int codEstacao;
+    int codEstacao; // Nao pode ser nulo
     int codLinha;
     int codProxEstacao;
     int distProxEstacao;
@@ -121,7 +121,7 @@ typedef struct dataRecord{
 
     // Tamanho Variável
     int tamNomeEstacao; // Indicador de tamanho
-    char *nomeEstacao;
+    char *nomeEstacao; // Nao pode ser nulo
 
     int tamNomeLinha; // Indicador de tamanho
     char *nomeLinha;
