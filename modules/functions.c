@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utils.h"
-#include "structs.h"
+#include "utils.c"
+#include "structs.c"
 
 // Descricao das funcoes utilizadas no programa // 
 
@@ -24,6 +24,9 @@ SAIDA:
  ./programaTrab
  1 estacao.csv estacao.bin
 */
+
+void createTable (char *arquivoEntrada, char *arquivoSaida){
+}
 
 /*
 # FUNCIONALIDADE [2] - listTable() #
@@ -54,6 +57,10 @@ ENTRADA: 2 arquivoEntrada.bin
  2 Parada Inglesa 1 Azul 3 1057 4 55
  ...
 */
+
+void listTable(char *arquivoEntrada){
+}
+
 
 /*
 # FUNCIONALIDADE [3] - listTableWhere() #
@@ -98,6 +105,8 @@ mn nomeCampo1 valorCampo1 ... nomeCampomn valorCampomn
  ... 
 */
 
+void listTableWhere(char *arquivoEntrada, int n, int m){
+}
 
 /*
 # FUNCIONALIDADE [4] - listTableRRN() #
@@ -128,3 +137,6 @@ ENTRADA: 4 arquivoEntrada.bin RRN
  9 Luz 1 Azul 10 NULO 4 55
 
 */
+
+void listTableRRN(char *arquivoEntrada, int RRN){
+}
