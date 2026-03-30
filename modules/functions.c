@@ -26,6 +26,12 @@ SAIDA:
 */
 
 void createTable (char *arquivoEntrada, char *arquivoSaida){
+
+    FILE *csvFile = fopen(arquivoEntrada, "r");
+    FILE *binFile = fopen(arquivoSaida, "wb");
+
+
+
 }
 
 /*

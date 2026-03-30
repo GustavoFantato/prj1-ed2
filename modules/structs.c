@@ -35,7 +35,7 @@ Observacoes:
 
 */
 
-typedef struct {
+typedef struct headerRecord{
     char status; // '0' ou '1'
     int top; // byte offset ou -1
     int proxRRN; // deve iniciado com 0
@@ -105,7 +105,7 @@ Observacoes:
 */
 
 
-typedef struct{
+typedef struct dataRecord{
     // Tamanho Fixo  
     int codEstacao;
     int codLinha;
