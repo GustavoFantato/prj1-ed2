@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 /* 
 
@@ -35,6 +36,9 @@ Observacoes:
  | Tamanho: int de 4 bytes 
 
 */
+
+typedef struct {
+} HeaderRecord;
 
 
 /*
@@ -95,3 +99,7 @@ Observacoes:
  - nomeEstacao: nome da estacao
  - nomeLinha: nome da linha
 */
+
+
+typedef struct{
+} DataRecord;
