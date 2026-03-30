@@ -37,7 +37,7 @@ Observacoes:
 
 typedef struct headerRecord{
     char status; // '0' ou '1'
-    int top; // byte offset ou -1
+    int topo; // byte offset ou -1
     int proxRRN; // deve iniciado com 0
     int nroEstacoes;
     int nroParesEstacao;
@@ -106,6 +106,11 @@ Observacoes:
 
 
 typedef struct dataRecord{
+    // Ja em ordem correta, definida pela representacao grafica do registro de dados (dado no documento de instrucoes do projeto)
+
+    char removido;
+    int proximo;
+
     // Tamanho Fixo  
     int codEstacao;
     int codLinha;
@@ -113,13 +118,12 @@ typedef struct dataRecord{
     int distProxEstacao;
     int codLinhaIntegra;
     int codEstIntegra;
-    char removido;
-    int proximo;
 
     // Tamanho Variável
-    char *nomeEstacao;
-    char *nomeLinha;
     int tamNomeEstacao; // Indicador de tamanho
+    char *nomeEstacao;
+
     int tamNomeLinha; // Indicador de tamanho
+    char *nomeLinha;
 
 } DataRecord;
