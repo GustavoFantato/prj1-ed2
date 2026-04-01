@@ -136,8 +136,8 @@ SAIDA:
             free(lineCopy);  
         }
 
-        printf("REGISTROS LIDOS: %d\n", header.proxRRN); // DEBUG
-        printf("Estacoes unicas: %d\n", header.nroEstacoes); // DEBUG
+        // printf("REGISTROS LIDOS: %d\n", header.proxRRN); // DEBUG
+        // printf("Estacoes unicas: %d\n", header.nroEstacoes); // DEBUG
 
         // Arquivo finalizado. Atualizar header status e fechar o arquivo
         header.status = '1';
