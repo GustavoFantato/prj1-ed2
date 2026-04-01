@@ -1,5 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef STRUCTS_H
+#define STRUCTS_H
+
+#define REGISTER_SIZE 80 
+#define HEADER_SIZE 17
+#define FIX_SIZE_FIELDS 37
+#define REGISTER_QTD 8
 
 /* 
 
@@ -43,7 +48,6 @@ typedef struct headerRecord{
     int nroParesEstacao;
 
 } HeaderRecord;
-
 
 /*
 
@@ -104,7 +108,6 @@ Observacoes:
  - nomeLinha: nome da linha
 */
 
-
 typedef struct dataRecord{
     // Ja em ordem correta, definida pela representacao grafica do registro de dados (dado no documento de instrucoes do projeto)
 
@@ -127,3 +130,11 @@ typedef struct dataRecord{
     char *nomeLinha;
 
 } DataRecord;
+
+// Utilizado na logica de contar quantos pares diferentes temos
+typedef struct par {
+    int orig;
+    int dest;
+} Par;
+
+#endif
