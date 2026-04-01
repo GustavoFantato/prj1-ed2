@@ -1,8 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "functions.h"
+#include "utils.h"
 #include <string.h>
-#include "utils.c"
-#include "structs.c"
+
+#define LINE_SIZE 1200 // Tamanho maximo de uma linha do arquivo .csv
 
 // Descricao das funcoes utilizadas no programa // 
 
@@ -25,8 +25,141 @@ SAIDA:
  1 estacao.csv estacao.bin
 */
 
-void createTable (char *arquivoEntrada, char *arquivoSaida){
-}
+    void createTable (char *arquivoEntrada, char *arquivoSaida){
+
+        // Abrir os arquivos de entrada e saida
+
+        FILE *csvFile = fopen(arquivoEntrada, "r"); // Abre para leitura
+        if (csvFile == NULL) { // Verifica se abriu corretamente
+            printf("Falha no processamento do arquivo.\n");
+            return;
+        }
+
+        FILE *binFile = fopen(arquivoSaida, "wb"); // Abre para escrita, se ja existe, sobrescreve
+        if (binFile == NULL) { // Verifica se abriu corretamente
+            printf("Falha no processamento do arquivo.\n");
+            fclose(csvFile); // Se o segundo arquivo falhou, temos que fechar o primeiro, ja que ele passou pela verificacao
+            return;
+        }
+
+        // Leitura do arquivo .csv e escrita no arquivo .bin
+        char line[LINE_SIZE];
+
+        // Cria-se a struct do cabecalho e inicializa seus campos
+        HeaderRecord header;
+        header.status = '0';
+        header.topo = -1;
+        header.proxRRN = 0;
+        header.nroEstacoes = 0;
+        header.nroParesEstacao = 0;
+
+        // Escreve o cabecalho inicial no .bin
+        fwrite(&header.status, sizeof(char), 1, binFile);
+        fwrite(&header.topo, sizeof(int), 1, binFile);
+        fwrite(&header.proxRRN, sizeof(int), 1, binFile);
+        fwrite(&header.nroEstacoes, sizeof(int), 1, binFile);
+        fwrite(&header.nroParesEstacao, sizeof(int), 1, binFile);
+
+        // Leitura das linhas
+        readCSVLine(line, LINE_SIZE, csvFile); // Devemos ignorar a primeira linha, ja que se trata do cabecalho do arquivo
+        
+        char **diffStationNames = NULL; // matriz para armazenar cada nome de estacao 
+        Par *listPares = NULL; // struct que armazena os codigos de origem e destino
+        
+
+        // int contReg = 0; // DEBUG
+
+        // Leitura e escrita dos multiplos registros 
+        while (readCSVLine(line, LINE_SIZE, csvFile) != NULL) {
+
+            DataRecord data; // Criacao da struct do registro de dados
+            memset(&data, 0, sizeof(DataRecord)); // Inicializacao da struct de dados com 0 para evitar lixo
+
+            data.removido = '0'; // a principio, nenhum registro esta logicamente removido
+            data.proximo = -1; // inicializa-se com -1
+
+            char *lineCopy = strdup(line); // Criar uma copia da linha para evitar modificar o original
+            char *ptr = lineCopy; // Este ponteiro vai "caminhar" pela linha
+
+            for (int i = 0; i < REGISTER_QTD; i++){  // loop para ler os fields da linha
+
+                char *field = strsep(&ptr, ","); 
+
+                if (field != NULL) {
+                // Limpa o \n apenas se for o último campo ou tiver quebras
+                field[strcspn(field, "\r\n")] = '\0';
+                switchDataRecord(&data, i, field);
+                }        
+            }
+
+            // Escrita do registro de dados no arquivo .bin
+            fwrite(&data.removido, sizeof(char), 1, binFile);
+            fwrite(&data.proximo, sizeof(int), 1, binFile);
+            fwrite(&data.codEstacao, sizeof(int), 1, binFile);
+            fwrite(&data.codLinha, sizeof(int), 1, binFile);
+            fwrite(&data.codProxEstacao, sizeof(int), 1, binFile);
+            fwrite(&data.distProxEstacao, sizeof(int), 1, binFile);
+            fwrite(&data.codLinhaIntegra, sizeof(int), 1, binFile);
+            fwrite(&data.codEstIntegra, sizeof(int), 1, binFile);
+            fwrite(&data.tamNomeEstacao, sizeof(int), 1, binFile);
+
+            if(data.tamNomeEstacao > 0){ // Escreve apenas se o tamNomeEstacao nao for 0
+            fwrite(data.nomeEstacao, sizeof(char), data.tamNomeEstacao, binFile);
+            }
+            fwrite(&data.tamNomeLinha, sizeof(int), 1, binFile);
+            if(data.tamNomeLinha > 0) { // Escreve apenas se o tamNomeLinha nao for 0
+            fwrite(data.nomeLinha, sizeof(char), data.tamNomeLinha, binFile);
+            }
+
+
+            // Calculando os lixos da memoria e escrevendo '$' no lugar
+            int garbageBytes = REGISTER_SIZE - (FIX_SIZE_FIELDS + data.tamNomeEstacao + data.tamNomeLinha); // calcula a quantidade de bytes de lixo
+
+            for(int i = 0; i < garbageBytes; i++){
+                fputc('$', binFile); 
+            }
+        
+
+            // Verificacoes das diferentes estacoes e pares
+
+            verifyIfDiffStation(data.nomeEstacao, &diffStationNames, &header.nroEstacoes); // Verifica se eh uma estacao diferente e ja incrementa se for
+            
+
+            verifyIfDiffPair(data.codEstacao, data.codProxEstacao, &listPares, &header.nroParesEstacao);
+            header.proxRRN++;
+
+            // Liberacao das memorias alocadas
+            free(data.nomeEstacao); 
+            if (data.nomeLinha != NULL){ // Liberar a memoria alocada caso ele nao seja nulo
+            free(data.nomeLinha);
+            }
+            free(lineCopy);  
+        }
+
+        // printf("REGISTROS LIDOS: %d\n", header.proxRRN); // DEBUG
+        // printf("Estacoes unicas: %d\n", header.nroEstacoes); // DEBUG
+
+        // Arquivo finalizado. Atualizar header status e fechar o arquivo
+        header.status = '1';
+        fseek(binFile,0,SEEK_SET);
+        fwrite(&header.status, sizeof(char), 1, binFile);
+        fwrite(&header.topo, sizeof(int), 1, binFile);
+        fwrite(&header.proxRRN, sizeof(int), 1, binFile);
+        fwrite(&header.nroEstacoes, sizeof(int), 1, binFile);
+        fwrite(&header.nroParesEstacao, sizeof(int), 1, binFile);
+
+        // Limpeza de memoria restante
+        for (int i = 0; i < header.nroEstacoes; i++) {
+        free(diffStationNames[i]);
+        }
+        free(diffStationNames);
+        if (listPares != NULL){free(listPares);}
+
+        fclose(binFile);
+        fclose(csvFile);   
+
+        binarioNaTela(arquivoSaida);
+    }
 
 /*
 # FUNCIONALIDADE [2] - listTable() #

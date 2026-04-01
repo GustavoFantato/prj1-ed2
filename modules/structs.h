@@ -1,5 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef STRUCTS_H
+#define STRUCTS_H
+
+#define REGISTER_SIZE 80 
+#define HEADER_SIZE 17
+#define FIX_SIZE_FIELDS 37
+#define REGISTER_QTD 8
 
 /* 
 
@@ -16,12 +21,10 @@ Observacoes:
  | Obs: ao abrir um arquivo para escrita, seu status deve ser mudado para 0 e mudado para 1 ao finalizar o uso do arquivo
  | Tamanho: string de 1 byte (char)
 
-
  - topo: armazena o byte offset
  | byte offset -> guarda o byteoffset de um reg. logicamente removido
  | -1 -> caso não haja registros logicamente removidos
  | Tamanho: int de 4 bytes
-
 
  - proxRRN: armazena o valor do prox. RRN disponível
  | Obs: deve ser iniciado com o valor '0' e alterado quando necessário
@@ -37,13 +40,18 @@ Observacoes:
 
 */
 
-typedef struct {
-} HeaderRecord;
+typedef struct headerRecord{
+    char status; // '0' ou '1'
+    int topo; // byte offset ou -1
+    int proxRRN; // deve iniciado com 0
+    int nroEstacoes;
+    int nroParesEstacao;
 
+} HeaderRecord;
 
 /*
 
-# Registro de Dados #
+# Registro de Dados - 80 bytes #
 -> Campos de tamanhos fixo e variáveis
 -> Para os de tamanho variável deve ser usado o método de indicador de tamanho
 -> Os dados são fornecidos em um .csv (que esta em /data)
@@ -100,6 +108,33 @@ Observacoes:
  - nomeLinha: nome da linha
 */
 
+typedef struct dataRecord{
+    // Ja em ordem correta, definida pela representacao grafica do registro de dados (dado no documento de instrucoes do projeto)
 
-typedef struct{
+    char removido;
+    int proximo;
+
+    // Tamanho Fixo  
+    int codEstacao; // Nao pode ser nulo
+    int codLinha;
+    int codProxEstacao;
+    int distProxEstacao;
+    int codLinhaIntegra;
+    int codEstIntegra;
+
+    // Tamanho Variável
+    int tamNomeEstacao; // Indicador de tamanho
+    char *nomeEstacao; // Nao pode ser nulo
+
+    int tamNomeLinha; // Indicador de tamanho
+    char *nomeLinha;
+
 } DataRecord;
+
+// Utilizado na logica de contar quantos pares diferentes temos
+typedef struct par {
+    int orig;
+    int dest;
+} Par;
+
+#endif

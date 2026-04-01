@@ -1,7 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include "structs.h"
+#include "utils.h"
 
 /*
  * Use essa função para comparação no run.codes.
@@ -76,4 +74,151 @@ void ScanQuoteString(char *str) {
     } else { // EOF
         strcpy(str, "");
     }
+}
+
+char *readCSVLine(char line[], int line_size, FILE *csvFile){
+    return fgets(line, line_size, csvFile);
+}
+
+
+// Funcao que vai retornar o conteudo do field, de acordo com o indice passado
+char *parseCSVField(char *line, int index){
+    char *field = NULL; // campo a ser retornado
+    // index eh a posicao para ler o campo
+    char *ptr = line; // a funcao strsep() muda o endereco de memoria, entao criamos um ponteiro para nao perder o endereco original
+
+    for (int i = 0; i <= index; i++){ // loop para ler os fields da linha, ate chegar no index desejado
+        field = strsep(&ptr, ",");
+
+        if (field == NULL){
+            return NULL;
+        }
+    }
+
+    if (field != NULL){
+        field[strcspn(field, "\r\n")] = '\0'; // caso seja o ultimo campo da linha, temos que tirar o \n e, talvez um \r, que vem junto, substituindo pelo \0
+    }
+    
+    return field;
+}
+
+
+// Funcao que vai verificar se o campo lido eh nulo ou nao, de acordo com as regras do projeto.
+int verifyIfNullField(char *field){
+    if (field == NULL || field[0] == '\0'){
+        return 1;
+    }
+    return 0;
+}
+
+// FUncao que vai atribuir os valores de cada field a struct de dados
+void switchDataRecord(DataRecord *data, int i, char *field){
+
+    switch(i){
+        case 0:
+            data->codEstacao = atoi(field);
+            break;
+        case 1:
+            data->nomeEstacao = strdup(field); // Precisa ser uma copia do field, pois field eh uma string que vai ser sobrescrita no proximo loop
+            break;
+        case 2:
+            if(verifyIfNullField(field)){
+                data->codLinha = -1; 
+            } else {
+                data->codLinha = atoi(field);
+            }
+            break;
+        case 3:
+            if(verifyIfNullField(field)){
+                data->tamNomeLinha = 0; 
+                data->nomeLinha = NULL;
+            } else {
+                data->tamNomeLinha = strlen(field); 
+                data->nomeLinha = strdup(field);
+            }
+            break;
+        case 4:
+            if(verifyIfNullField(field)){
+                data->codProxEstacao = -1; 
+            } else {
+                data->codProxEstacao = atoi(field);
+            }
+            break;
+        case 5:
+            if(verifyIfNullField(field)){
+                data->distProxEstacao = -1; 
+            } else {
+                data->distProxEstacao = atoi(field);
+            }
+            break;
+        case 6:
+            if(verifyIfNullField(field)){
+                data->codLinhaIntegra = -1; 
+            } else {
+                data->codLinhaIntegra = atoi(field);
+            }
+            break;
+        case 7:
+            if(verifyIfNullField(field)){
+                data->codEstIntegra = -1; 
+            } else {
+                data->codEstIntegra = atoi(field);
+            }
+            break;
+    }
+}
+
+// Funcao que verifica seja ja ha uma estacao com o mesmo nome. Caso nao haja, adiciona o nome na matriz e ja incrementa a quantidade de estacoes
+void verifyIfDiffStation(char *name, char ***diffStationNames, int *stationsQtd){
+
+    // ***diffStationNames armazena o endereco do ponteiro da lista, pra conseguir avisar a CreateTable que a lista mudou de lugar 
+    // printf("ENTREI AQUI");
+
+
+    for (int i = 0; i < *stationsQtd; i++){
+        if (strcmp(name, (*diffStationNames)[i]) == 0){ // Strings iguais, nao eh diferente
+            return;
+        }
+    }
+
+    // Se saiu do loop, eh porque sao diferentes
+    (*stationsQtd)++;
+
+    char **temp = realloc(*diffStationNames, sizeof(char*) * (*stationsQtd));
+    
+    if (temp == NULL){
+        return;
+    }
+
+    *diffStationNames = temp;
+
+    (*diffStationNames)[(*stationsQtd) - 1] = strdup(name);
+
+}
+
+
+// Funcao que verifica seja ja ha uma estacao com o mesmo nome. Caso nao haja, adiciona o nome na matriz e ja incrementa a quantidade de estacoes
+void verifyIfDiffPair(int orig, int dest, Par **listPar, int *nPares){
+
+
+    for (int i = 0; i < *nPares; i++){
+        if ((*listPar)[i].orig == orig && (*listPar)[i].dest == dest){
+            return;
+        }
+    }
+
+    // Se saiu do loop, eh porque sao diferentes
+    (*nPares)++;
+
+    Par *temp = realloc(*listPar, sizeof(Par) * (*nPares));
+    
+    if (temp == NULL){
+        return;
+    }
+
+    *listPar = temp;
+
+    (*listPar)[(*nPares) - 1].orig = orig;
+    (*listPar)[(*nPares) - 1].dest = dest;
+
 }
