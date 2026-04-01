@@ -10,10 +10,14 @@ Aluno 1:
 */
 
 #include <stdio.h>
-#include "structs.c"
-#include "utils.c"
-#include "functions.c"
+#include "../modules/structs.c"
+#include "../modules/utils.c"
+#include "../modules/functions.c"
 
 int main() {
+
+    createTable("estacao.csv", "estacao.bin");
+
+
     return 0;
 }
