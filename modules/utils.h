@@ -7,6 +7,9 @@
 #include <ctype.h>
 #include "structs.h"
 
+
+char *custom_strsep(char **stringp, const char *delim);
+
 void binarioNaTela(char *arquivo);
 
 void ScanQuoteString(char *str);

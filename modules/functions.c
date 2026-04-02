@@ -32,12 +32,14 @@ SAIDA:
         FILE *csvFile = fopen(arquivoEntrada, "r"); // Abre para leitura
         if (csvFile == NULL) { // Verifica se abriu corretamente
             printf("Falha no processamento do arquivo.\n");
+            printf("eu");
             return;
         }
 
         FILE *binFile = fopen(arquivoSaida, "wb"); // Abre para escrita, se ja existe, sobrescreve
         if (binFile == NULL) { // Verifica se abriu corretamente
             printf("Falha no processamento do arquivo.\n");
+            printf("EUUUU2");
             fclose(csvFile); // Se o segundo arquivo falhou, temos que fechar o primeiro, ja que ele passou pela verificacao
             return;
         }
@@ -83,7 +85,7 @@ SAIDA:
 
             for (int i = 0; i < REGISTER_QTD; i++){  // loop para ler os fields da linha
 
-                char *field = strsep(&ptr, ","); 
+                char *field = custom_strsep(&ptr, ",");
 
                 if (field != NULL) {
                 // Limpa o \n apenas se for o último campo ou tiver quebras
@@ -191,7 +193,111 @@ ENTRADA: 2 arquivoEntrada.bin
  ...
 */
 
-void listTable(char *arquivoEntrada){
+void listTable(char *arquivoEntrada) {
+    // 1. Abre o arquivo binário para leitura
+    FILE *binFile = fopen(arquivoEntrada, "rb");
+    if (binFile == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    // 2. Lê o status do arquivo (1 byte)
+    char status;
+    fread(&status, sizeof(char), 1, binFile);
+
+    if (status == '0') {
+        printf("Falha no processamento do arquivo.\n");
+        fclose(binFile);
+        return;
+    }
+
+    // 3. Pula o restante do cabeçalho (16 bytes restantes dos 17 totais)
+    fseek(binFile, 16, SEEK_CUR);
+
+    int encontrouRegistro = 0; 
+    char removido;
+
+    // 4. O Loop de Leitura (O "Cursor" da nossa tabela)
+    while (fread(&removido, sizeof(char), 1, binFile) == 1) {
+        
+        if (removido == '1') {
+            // Se está removido, pula o restante do registro (80 - 1 = 79 bytes)
+            fseek(binFile, 79, SEEK_CUR);
+            continue; 
+        }
+
+        encontrouRegistro = 1;
+        DataRecord data;
+        data.removido = removido; 
+        
+        // A) Ler os próximos campos de tamanho fixo
+        fread(&data.proximo, sizeof(int), 1, binFile);
+        fread(&data.codEstacao, sizeof(int), 1, binFile);
+        fread(&data.codLinha, sizeof(int), 1, binFile);
+        fread(&data.codProxEstacao, sizeof(int), 1, binFile);
+        fread(&data.distProxEstacao, sizeof(int), 1, binFile);
+        fread(&data.codLinhaIntegra, sizeof(int), 1, binFile);
+        fread(&data.codEstIntegra, sizeof(int), 1, binFile);
+
+        // B) Ler o tamNomeEstacao e a string nomeEstacao
+        fread(&data.tamNomeEstacao, sizeof(int), 1, binFile);
+        if (data.tamNomeEstacao > 0) {
+            data.nomeEstacao = (char *)malloc((data.tamNomeEstacao + 1) * sizeof(char));
+            fread(data.nomeEstacao, sizeof(char), data.tamNomeEstacao, binFile);
+            data.nomeEstacao[data.tamNomeEstacao] = '\0'; 
+        } else {
+            data.nomeEstacao = NULL;
+        }
+
+        // C) Ler o tamNomeLinha e a string nomeLinha
+        fread(&data.tamNomeLinha, sizeof(int), 1, binFile);
+        if (data.tamNomeLinha > 0) {
+            data.nomeLinha = (char *)malloc((data.tamNomeLinha + 1) * sizeof(char));
+            fread(data.nomeLinha, sizeof(char), data.tamNomeLinha, binFile);
+            data.nomeLinha[data.tamNomeLinha] = '\0';
+        } else {
+            data.nomeLinha = NULL;
+        }
+
+        // D) Pular os bytes de lixo ('$') para alinhar o ponteiro pro próximo while
+        int garbageBytes = REGISTER_SIZE - (FIX_SIZE_FIELDS + data.tamNomeEstacao + data.tamNomeLinha);
+        fseek(binFile, garbageBytes, SEEK_CUR); 
+
+        // E) Imprimir os dados formatados tratando os NULOS
+        printf("%d ", data.codEstacao);
+
+        if (data.nomeEstacao != NULL) printf("%s ", data.nomeEstacao);
+        else printf("NULO ");
+
+        if (data.codLinha == -1) printf("NULO ");
+        else printf("%d ", data.codLinha);
+
+        if (data.nomeLinha != NULL) printf("%s ", data.nomeLinha);
+        else printf("NULO ");
+
+        if (data.codProxEstacao == -1) printf("NULO ");
+        else printf("%d ", data.codProxEstacao);
+
+        if (data.distProxEstacao == -1) printf("NULO ");
+        else printf("%d ", data.distProxEstacao);
+
+        if (data.codLinhaIntegra == -1) printf("NULO ");
+        else printf("%d ", data.codLinhaIntegra);
+
+        if (data.codEstIntegra == -1) printf("NULO\n");
+        else printf("%d\n", data.codEstIntegra);
+
+        // F) Liberar a memória das strings alocadas nesta iteração
+        if (data.nomeEstacao != NULL) free(data.nomeEstacao);
+        if (data.nomeLinha != NULL) free(data.nomeLinha);
+    }
+
+    // 5. Finalização
+    if (!encontrouRegistro) {
+        printf("Registro inexistente.\n");
+    }
+
+    fclose(binFile);
 }
 
 
