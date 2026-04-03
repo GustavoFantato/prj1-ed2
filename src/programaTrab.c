@@ -32,9 +32,22 @@ int main() {
         // Funcionalidade 2 recebe 1 string: o nome do binário gerado
         scanf("%s", arquivoEntrada);
         listTable(arquivoEntrada);
+
+    } else if (funcionalidade == 3) {
+        char arquivoEntrada[100];
+        int n; // Número de buscas
         
-    } 
-    // Os casos 3 e 4 vão entrar aqui depois!
+        scanf("%s %d", arquivoEntrada, &n);
+        listTableWhere(arquivoEntrada, n);
+        
+    } else if (funcionalidade == 4) {
+        char arquivoEntrada[100];
+        int rrnBusca;
+        
+        // Lê o arquivo binário e o RRN desejado
+        scanf("%s %d", arquivoEntrada, &rrnBusca);
+        listTableRRN(arquivoEntrada, rrnBusca);
+    }
 
     return 0;
 }
