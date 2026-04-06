@@ -43,6 +43,7 @@ A organização dos arquivos segue a estrutura abaixo:
 │   └── programaTrab.c # Função main e controle de fluxo
 ├── data/           # Arquivos de dados (.csv e .bin)
 └── Makefile        # Automação de compilação, execução e empacotamento
+```
 
 ## 🛠️ Especificações Técnicas
 
@@ -66,16 +67,19 @@ make all
 Para rodar o programa (o ambiente de teste redirecionará as entradas automaticamente), utilize:
 ```bash
 make run
+```
 
 ### 3. Limpeza
 Para remover o executável, arquivos binários temporários e arquivos comprimidos, utilize:
 ```bash
 make clean
+```
 
 ### 4. Submissão
 Para gerar o arquivo .zip com a estrutura correta para envio (incluindo as pastas src, modules e o Makefile), utilize:
 ```bash 
 make zip
+```
 
 --- 
 
