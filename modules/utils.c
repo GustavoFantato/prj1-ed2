@@ -4,11 +4,8 @@
 /*
  * Use essa função para comparação no run.codes.
  * Lembre-se de ter fechado (fclose) o arquivo anteriormente.
- *
- * Ela vai abrir de novo para leitura e depois fechar
- * (você não vai perder pontos por isso se usar ela).
+ * Ela vai abrir de novo para leitura e depois fechar.
  */
-
 char *custom_strsep(char **stringp, const char *delim) {
     if (*stringp == NULL) return NULL;
     char *start = *stringp;
@@ -52,17 +49,8 @@ void binarioNaTela(char *arquivo) {
 }
 
 /*
- *	Use essa função para ler um campo string delimitado entre aspas (").
- *	Chame ela na hora que for ler tal campo. Por exemplo:
- *
- *	A entrada está da seguinte forma:
- *		nomeDoCampo "MARIA DA SILVA"
- *
- *	Para ler isso para as strings já alocadas str1 e str2 do seu programa,
- * você faz: scanf("%s", str1); // Vai salvar nomeDoCampo em str1
- *		scan_quote_string(str2); // Vai salvar MARIA DA SILVA em str2
- * (sem as aspas)
- *
+ * Use essa função para ler um campo string delimitado entre aspas (").
+ * Chame ela na hora que for ler tal campo.
  */
 void ScanQuoteString(char *str) {
     char R;
@@ -90,34 +78,40 @@ void ScanQuoteString(char *str) {
     }
 }
 
+/*
+ * Lê uma linha inteira do arquivo CSV para um buffer de memória.
+ */
 char *readCSVLine(char line[], int line_size, FILE *csvFile){
     return fgets(line, line_size, csvFile);
 }
 
-
-// Funcao que vai retornar o conteudo do field, de acordo com o indice passado
+/*
+ * Extrai o conteúdo de uma coluna específica do CSV baseada no seu índice.
+ * Lida com o fatiamento da string separada por vírgulas.
+ */
 char *parseCSVField(char *line, int index){
-    char *field = NULL; // campo a ser retornado
-    // index eh a posicao para ler o campo
-    char *ptr = line; // a funcao strsep() muda o endereco de memoria, entao criamos um ponteiro para nao perder o endereco original
+    char *field = NULL; 
+    char *ptr = line; // Mantém o endereço original, pois custom_strsep altera o ponteiro
 
-    for (int i = 0; i <= index; i++){ // loop para ler os fields da linha, ate chegar no index desejado
+    // Avança pelos tokens da string até alcançar a coluna desejada
+    for (int i = 0; i <= index; i++){ 
         field = custom_strsep(&ptr, ",");
-
         if (field == NULL){
             return NULL;
         }
     }
 
+    // Limpa caracteres de quebra de linha caso seja a última coluna (Windows/Linux)
     if (field != NULL){
-        field[strcspn(field, "\r\n")] = '\0'; // caso seja o ultimo campo da linha, temos que tirar o \n e, talvez um \r, que vem junto, substituindo pelo \0
+        field[strcspn(field, "\r\n")] = '\0'; 
     }
     
     return field;
 }
 
-
-// Funcao que vai verificar se o campo lido eh nulo ou nao, de acordo com as regras do projeto.
+/*
+ * Verifica se o campo extraído está vazio, garantindo o tratamento de NULOs.
+ */
 int verifyIfNullField(char *field){
     if (field == NULL || field[0] == '\0'){
         return 1;
@@ -125,25 +119,28 @@ int verifyIfNullField(char *field){
     return 0;
 }
 
-// FUncao que vai atribuir os valores de cada field a struct de dados
+/*
+ * Motor de conversão: Recebe uma string lida do CSV e a converte para o tipo
+ * correto dentro da struct DataRecord, dependendo da coluna (índice i).
+ */
 void switchDataRecord(DataRecord *data, int i, char *field){
-
     switch(i){
-        case 0:
+        case 0: // codEstacao (Sempre preenchido)
             data->codEstacao = atoi(field);
             break;
-        case 1:
+
+        case 1: // nomeEstacao (Tamanho variável)
             data->tamNomeEstacao = strlen(field);
-            data->nomeEstacao = strdup(field); // Precisa ser uma copia do field, pois field eh uma string que vai ser sobrescrita no proximo loop
+            // strdup aloca memória para a cópia, evitando sobrescrita no próximo loop
+            data->nomeEstacao = strdup(field); 
             break;
-        case 2:
-            if(verifyIfNullField(field)){
-                data->codLinha = -1; 
-            } else {
-                data->codLinha = atoi(field);
-            }
+
+        case 2: // codLinha
+            if(verifyIfNullField(field)) data->codLinha = -1; 
+            else data->codLinha = atoi(field);
             break;
-        case 3:
+
+        case 3: // nomeLinha (Tamanho variável)
             if(verifyIfNullField(field)){
                 data->tamNomeLinha = 0; 
                 data->nomeLinha = NULL;
@@ -152,88 +149,70 @@ void switchDataRecord(DataRecord *data, int i, char *field){
                 data->nomeLinha = strdup(field);
             }
             break;
-        case 4:
-            if(verifyIfNullField(field)){
-                data->codProxEstacao = -1; 
-            } else {
-                data->codProxEstacao = atoi(field);
-            }
+
+        case 4: // codProxEstacao
+            if(verifyIfNullField(field)) data->codProxEstacao = -1; 
+            else data->codProxEstacao = atoi(field);
             break;
-        case 5:
-            if(verifyIfNullField(field)){
-                data->distProxEstacao = -1; 
-            } else {
-                data->distProxEstacao = atoi(field);
-            }
+
+        case 5: // distProxEstacao
+            if(verifyIfNullField(field)) data->distProxEstacao = -1; 
+            else data->distProxEstacao = atoi(field);
             break;
-        case 6:
-            if(verifyIfNullField(field)){
-                data->codLinhaIntegra = -1; 
-            } else {
-                data->codLinhaIntegra = atoi(field);
-            }
+
+        case 6: // codLinhaIntegra
+            if(verifyIfNullField(field)) data->codLinhaIntegra = -1; 
+            else data->codLinhaIntegra = atoi(field);
             break;
-        case 7:
-            if(verifyIfNullField(field)){
-                data->codEstIntegra = -1; 
-            } else {
-                data->codEstIntegra = atoi(field);
-            }
+
+        case 7: // codEstIntegra
+            if(verifyIfNullField(field)) data->codEstIntegra = -1; 
+            else data->codEstIntegra = atoi(field);
             break;
     }
 }
 
-// Funcao que verifica seja ja ha uma estacao com o mesmo nome. Caso nao haja, adiciona o nome na matriz e ja incrementa a quantidade de estacoes
+/*
+ * Registra estações únicas para atualização do cabeçalho.
+ * Usa alocação dinâmica para crescer a lista de nomes apenas quando necessário.
+ */
 void verifyIfDiffStation(char *name, char ***diffStationNames, int *stationsQtd){
-
-    // ***diffStationNames armazena o endereco do ponteiro da lista, pra conseguir avisar a CreateTable que a lista mudou de lugar 
-    // printf("ENTREI AQUI");
-
-
+    // Busca linear para verificar se a estação já foi registrada
     for (int i = 0; i < *stationsQtd; i++){
-        if (strcmp(name, (*diffStationNames)[i]) == 0){ // Strings iguais, nao eh diferente
-            return;
+        if (strcmp(name, (*diffStationNames)[i]) == 0){ 
+            return; // Estação já existe, aborta a inserção
         }
     }
 
-    // Se saiu do loop, eh porque sao diferentes
+    // Se é uma estação nova, expande a matriz dinamicamente
     (*stationsQtd)++;
-
     char **temp = realloc(*diffStationNames, sizeof(char*) * (*stationsQtd));
     
-    if (temp == NULL){
-        return;
-    }
-
+    if (temp == NULL) return; // Falha de alocação de segurança
+    
     *diffStationNames = temp;
-
+    // Insere a nova estação na última posição disponível
     (*diffStationNames)[(*stationsQtd) - 1] = strdup(name);
-
 }
 
-
-// Funcao que verifica seja ja ha uma estacao com o mesmo nome. Caso nao haja, adiciona o nome na matriz e ja incrementa a quantidade de estacoes
+/*
+ * Registra pares únicos de estações (origem/destino) para o cabeçalho.
+ * Segue a mesma lógica de alocação sob demanda da função de estações.
+ */
 void verifyIfDiffPair(int orig, int dest, Par **listPar, int *nPares){
-
-
     for (int i = 0; i < *nPares; i++){
         if ((*listPar)[i].orig == orig && (*listPar)[i].dest == dest){
-            return;
+            return; // Par já mapeado
         }
     }
 
-    // Se saiu do loop, eh porque sao diferentes
+    // Se é um par novo, expande a lista de structs Par
     (*nPares)++;
-
     Par *temp = realloc(*listPar, sizeof(Par) * (*nPares));
     
-    if (temp == NULL){
-        return;
-    }
-
+    if (temp == NULL) return;
+    
     *listPar = temp;
-
     (*listPar)[(*nPares) - 1].orig = orig;
     (*listPar)[(*nPares) - 1].dest = dest;
-
 }
