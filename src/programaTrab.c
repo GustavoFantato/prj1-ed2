@@ -10,7 +10,7 @@ Aluno 1:
 */
 
 #include <stdio.h>
-#include "C:\Users\Victor Zaneti\Desktop\prj1-ed2\modules\functions.h" // Ajuste o caminho conforme a sua pasta
+#include "../modules/functions.h"
 
 int main() {
     int funcionalidade;
