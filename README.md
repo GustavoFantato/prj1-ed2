@@ -62,6 +62,7 @@ O projeto utiliza um `Makefile` para automatizar as etapas de compilação e exe
 Para compilar o projeto e gerar o executável `programaTrab`, utilize o comando:
 ```bash
 make all
+```
 
 ### 2. Execução
 Para rodar o programa (o ambiente de teste redirecionará as entradas automaticamente), utilize:
