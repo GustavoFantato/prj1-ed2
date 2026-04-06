@@ -108,11 +108,7 @@ void createTable(char *arquivoEntrada, char *arquivoSaida) {
         }
 
         verifyIfDiffStation(data.nomeEstacao, &diffStationNames, &header.nroEstacoes);
-
-        if(data.codProxEstacao != -1){
         verifyIfDiffPair(data.codEstacao, data.codProxEstacao, &listPares, &header.nroParesEstacao);
-        }
-        
         header.proxRRN++;
 
         free(data.nomeEstacao); 
