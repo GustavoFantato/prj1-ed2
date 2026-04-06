@@ -8,6 +8,20 @@
  * Ela vai abrir de novo para leitura e depois fechar
  * (você não vai perder pontos por isso se usar ela).
  */
+
+char *custom_strsep(char **stringp, const char *delim) {
+    if (*stringp == NULL) return NULL;
+    char *start = *stringp;
+    char *end = strpbrk(start, delim);
+    if (end) {
+        *end = '\0';
+        *stringp = end + 1;
+    } else {
+        *stringp = NULL;
+    }
+    return start;
+}
+
 void binarioNaTela(char *arquivo) {
     FILE *fs;
     if (arquivo == NULL || !(fs = fopen(arquivo, "rb"))) {
@@ -88,7 +102,7 @@ char *parseCSVField(char *line, int index){
     char *ptr = line; // a funcao strsep() muda o endereco de memoria, entao criamos um ponteiro para nao perder o endereco original
 
     for (int i = 0; i <= index; i++){ // loop para ler os fields da linha, ate chegar no index desejado
-        field = strsep(&ptr, ",");
+        field = custom_strsep(&ptr, ",");
 
         if (field == NULL){
             return NULL;
@@ -119,6 +133,7 @@ void switchDataRecord(DataRecord *data, int i, char *field){
             data->codEstacao = atoi(field);
             break;
         case 1:
+            data->tamNomeEstacao = strlen(field);
             data->nomeEstacao = strdup(field); // Precisa ser uma copia do field, pois field eh uma string que vai ser sobrescrita no proximo loop
             break;
         case 2:

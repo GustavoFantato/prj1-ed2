@@ -83,7 +83,7 @@ SAIDA:
 
             for (int i = 0; i < REGISTER_QTD; i++){  // loop para ler os fields da linha
 
-                char *field = strsep(&ptr, ","); 
+                char *field = custom_strsep(&ptr, ",");
 
                 if (field != NULL) {
                 // Limpa o \n apenas se for o último campo ou tiver quebras
@@ -191,7 +191,111 @@ ENTRADA: 2 arquivoEntrada.bin
  ...
 */
 
-void listTable(char *arquivoEntrada){
+void listTable(char *arquivoEntrada) {
+    // 1. Abre o arquivo binário para leitura
+    FILE *binFile = fopen(arquivoEntrada, "rb");
+    if (binFile == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    // 2. Lê o status do arquivo (1 byte)
+    char status;
+    fread(&status, sizeof(char), 1, binFile);
+
+    if (status == '0') {
+        printf("Falha no processamento do arquivo.\n");
+        fclose(binFile);
+        return;
+    }
+
+    // 3. Pula o restante do cabeçalho (16 bytes restantes dos 17 totais)
+    fseek(binFile, 16, SEEK_CUR);
+
+    int encontrouRegistro = 0; 
+    char removido;
+
+    // 4. O Loop de Leitura (O "Cursor" da nossa tabela)
+    while (fread(&removido, sizeof(char), 1, binFile) == 1) {
+        
+        if (removido == '1') {
+            // Se está removido, pula o restante do registro (80 - 1 = 79 bytes)
+            fseek(binFile, 79, SEEK_CUR);
+            continue; 
+        }
+
+        encontrouRegistro = 1;
+        DataRecord data;
+        data.removido = removido; 
+        
+        // A) Ler os próximos campos de tamanho fixo
+        fread(&data.proximo, sizeof(int), 1, binFile);
+        fread(&data.codEstacao, sizeof(int), 1, binFile);
+        fread(&data.codLinha, sizeof(int), 1, binFile);
+        fread(&data.codProxEstacao, sizeof(int), 1, binFile);
+        fread(&data.distProxEstacao, sizeof(int), 1, binFile);
+        fread(&data.codLinhaIntegra, sizeof(int), 1, binFile);
+        fread(&data.codEstIntegra, sizeof(int), 1, binFile);
+
+        // B) Ler o tamNomeEstacao e a string nomeEstacao
+        fread(&data.tamNomeEstacao, sizeof(int), 1, binFile);
+        if (data.tamNomeEstacao > 0) {
+            data.nomeEstacao = (char *)malloc((data.tamNomeEstacao + 1) * sizeof(char));
+            fread(data.nomeEstacao, sizeof(char), data.tamNomeEstacao, binFile);
+            data.nomeEstacao[data.tamNomeEstacao] = '\0'; 
+        } else {
+            data.nomeEstacao = NULL;
+        }
+
+        // C) Ler o tamNomeLinha e a string nomeLinha
+        fread(&data.tamNomeLinha, sizeof(int), 1, binFile);
+        if (data.tamNomeLinha > 0) {
+            data.nomeLinha = (char *)malloc((data.tamNomeLinha + 1) * sizeof(char));
+            fread(data.nomeLinha, sizeof(char), data.tamNomeLinha, binFile);
+            data.nomeLinha[data.tamNomeLinha] = '\0';
+        } else {
+            data.nomeLinha = NULL;
+        }
+
+        // D) Pular os bytes de lixo ('$') para alinhar o ponteiro pro próximo while
+        int garbageBytes = REGISTER_SIZE - (FIX_SIZE_FIELDS + data.tamNomeEstacao + data.tamNomeLinha);
+        fseek(binFile, garbageBytes, SEEK_CUR); 
+
+        // E) Imprimir os dados formatados tratando os NULOS
+        printf("%d ", data.codEstacao);
+
+        if (data.nomeEstacao != NULL) printf("%s ", data.nomeEstacao);
+        else printf("NULO ");
+
+        if (data.codLinha == -1) printf("NULO ");
+        else printf("%d ", data.codLinha);
+
+        if (data.nomeLinha != NULL) printf("%s ", data.nomeLinha);
+        else printf("NULO ");
+
+        if (data.codProxEstacao == -1) printf("NULO ");
+        else printf("%d ", data.codProxEstacao);
+
+        if (data.distProxEstacao == -1) printf("NULO ");
+        else printf("%d ", data.distProxEstacao);
+
+        if (data.codLinhaIntegra == -1) printf("NULO ");
+        else printf("%d ", data.codLinhaIntegra);
+
+        if (data.codEstIntegra == -1) printf("NULO\n");
+        else printf("%d\n", data.codEstIntegra);
+
+        // F) Liberar a memória das strings alocadas nesta iteração
+        if (data.nomeEstacao != NULL) free(data.nomeEstacao);
+        if (data.nomeLinha != NULL) free(data.nomeLinha);
+    }
+
+    // 5. Finalização
+    if (!encontrouRegistro) {
+        printf("Registro inexistente.\n");
+    }
+
+    fclose(binFile);
 }
 
 
@@ -238,7 +342,177 @@ mn nomeCampo1 valorCampo1 ... nomeCampomn valorCampomn
  ... 
 */
 
-void listTableWhere(char *arquivoEntrada, int n, int m){
+void listTableWhere(char *arquivoEntrada, int n) {
+    FILE *binFile = fopen(arquivoEntrada, "rb");
+    if (binFile == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    char status;
+    fread(&status, sizeof(char), 1, binFile);
+    if (status == '0') {
+        printf("Falha no processamento do arquivo.\n");
+        fclose(binFile);
+        return;
+    }
+
+    // O Loop Principal: Roda 'n' vezes, uma para cada busca solicitada pelo usuário
+    for (int i = 0; i < n; i++) {
+        
+        int m;
+        scanf("%d", &m); // Lê quantos filtros essa busca vai ter
+
+        // Arrays para guardar os nomes dos campos e os valores que o usuário vai digitar
+        char campos[8][30];
+        char valores[8][100];
+
+        // 1. CAPTURA DOS FILTROS
+        for (int j = 0; j < m; j++) {
+            scanf("%s", campos[j]); // Lê o nome do campo (ex: "codLinha")
+            ScanQuoteString(valores[j]); // Lê o valor tratando as aspas e o NULO
+        }
+
+        // 2. PREPARAR O FULL TABLE SCAN
+        // Como o usuário pode fazer várias buscas (n > 1), precisamos garantir que 
+        // a "agulha" de leitura do arquivo volte para o início dos dados (Byte 17) a cada nova busca!
+        fseek(binFile, HEADER_SIZE, SEEK_SET);
+
+        int encontrouRegistro = 0;
+        char removido;
+
+        // 3. A VARREDURA O(n) (Idêntico à Funcionalidade 2)
+        while (fread(&removido, sizeof(char), 1, binFile) == 1) {
+            if (removido == '1') {
+                fseek(binFile, 79, SEEK_CUR);
+                continue;
+            }
+
+            DataRecord data;
+            data.removido = removido;
+
+            // Lendo os campos fixos
+            fread(&data.proximo, sizeof(int), 1, binFile);
+            fread(&data.codEstacao, sizeof(int), 1, binFile);
+            fread(&data.codLinha, sizeof(int), 1, binFile);
+            fread(&data.codProxEstacao, sizeof(int), 1, binFile);
+            fread(&data.distProxEstacao, sizeof(int), 1, binFile);
+            fread(&data.codLinhaIntegra, sizeof(int), 1, binFile);
+            fread(&data.codEstIntegra, sizeof(int), 1, binFile);
+
+            // Lendo nomeEstacao
+            fread(&data.tamNomeEstacao, sizeof(int), 1, binFile);
+            if (data.tamNomeEstacao > 0) {
+                data.nomeEstacao = (char *)malloc((data.tamNomeEstacao + 1) * sizeof(char));
+                fread(data.nomeEstacao, sizeof(char), data.tamNomeEstacao, binFile);
+                data.nomeEstacao[data.tamNomeEstacao] = '\0';
+            } else {
+                data.nomeEstacao = NULL;
+            }
+
+            // Lendo nomeLinha
+            fread(&data.tamNomeLinha, sizeof(int), 1, binFile);
+            if (data.tamNomeLinha > 0) {
+                data.nomeLinha = (char *)malloc((data.tamNomeLinha + 1) * sizeof(char));
+                fread(data.nomeLinha, sizeof(char), data.tamNomeLinha, binFile);
+                data.nomeLinha[data.tamNomeLinha] = '\0';
+            } else {
+                data.nomeLinha = NULL;
+            }
+
+            int garbageBytes = REGISTER_SIZE - (FIX_SIZE_FIELDS + data.tamNomeEstacao + data.tamNomeLinha);
+            fseek(binFile, garbageBytes, SEEK_CUR);
+
+            // 4. O TESTE DE MATCH (O nosso WHERE dinâmico)
+            int match = 1; // Assumimos que a linha serve, até provar o contrário
+
+            for (int f = 0; f < m; f++) {
+                // A função ScanQuoteString converte a palavra NULO para uma string vazia "". 
+                // Então usamos o operador ternário para transformar "" em -1 para os inteiros.
+
+                if (strcmp(campos[f], "codEstacao") == 0) {
+                    int valBusca = (strcmp(valores[f], "") == 0) ? -1 : atoi(valores[f]);
+                    if (data.codEstacao != valBusca) match = 0;
+                } 
+                else if (strcmp(campos[f], "codLinha") == 0) {
+                    int valBusca = (strcmp(valores[f], "") == 0) ? -1 : atoi(valores[f]);
+                    if (data.codLinha != valBusca) match = 0;
+                }
+                else if (strcmp(campos[f], "codProxEstacao") == 0) {
+                    int valBusca = (strcmp(valores[f], "") == 0) ? -1 : atoi(valores[f]);
+                    if (data.codProxEstacao != valBusca) match = 0;
+                }
+                else if (strcmp(campos[f], "distProxEstacao") == 0) {
+                    int valBusca = (strcmp(valores[f], "") == 0) ? -1 : atoi(valores[f]);
+                    if (data.distProxEstacao != valBusca) match = 0;
+                }
+                else if (strcmp(campos[f], "codLinhaIntegra") == 0) {
+                    int valBusca = (strcmp(valores[f], "") == 0) ? -1 : atoi(valores[f]);
+                    if (data.codLinhaIntegra != valBusca) match = 0;
+                }
+                else if (strcmp(campos[f], "codEstIntegra") == 0) {
+                    int valBusca = (strcmp(valores[f], "") == 0) ? -1 : atoi(valores[f]);
+                    if (data.codEstIntegra != valBusca) match = 0;
+                }
+                else if (strcmp(campos[f], "nomeEstacao") == 0) {
+                    // Para strings, comparamos usando strcmp
+                    if (strcmp(valores[f], "") == 0) { 
+                        if (data.nomeEstacao != NULL) match = 0; // Buscou NULO, mas tem dado
+                    } else {
+                        if (data.nomeEstacao == NULL || strcmp(data.nomeEstacao, valores[f]) != 0) match = 0;
+                    }
+                }
+                else if (strcmp(campos[f], "nomeLinha") == 0) {
+                    if (strcmp(valores[f], "") == 0) {
+                        if (data.nomeLinha != NULL) match = 0;
+                    } else {
+                        if (data.nomeLinha == NULL || strcmp(data.nomeLinha, valores[f]) != 0) match = 0;
+                    }
+                }
+                
+                // Se um dos filtros já reprovou o registro, não precisamos testar os outros
+                if (match == 0) break; 
+            }
+
+            // 5. SE DEU MATCH EM TUDO, IMPRIME!
+            if (match == 1) {
+                encontrouRegistro = 1;
+                
+                printf("%d ", data.codEstacao);
+                if (data.nomeEstacao != NULL) printf("%s ", data.nomeEstacao);
+                else printf("NULO ");
+
+                if (data.codLinha == -1) printf("NULO ");
+                else printf("%d ", data.codLinha);
+
+                if (data.nomeLinha != NULL) printf("%s ", data.nomeLinha);
+                else printf("NULO ");
+
+                if (data.codProxEstacao == -1) printf("NULO ");
+                else printf("%d ", data.codProxEstacao);
+
+                if (data.distProxEstacao == -1) printf("NULO ");
+                else printf("%d ", data.distProxEstacao);
+
+                if (data.codLinhaIntegra == -1) printf("NULO ");
+                else printf("%d ", data.codLinhaIntegra);
+
+                if (data.codEstIntegra == -1) printf("NULO\n");
+                else printf("%d\n", data.codEstIntegra);
+            }
+
+            // Limpa a memória pra próxima iteração do while
+            if (data.nomeEstacao != NULL) free(data.nomeEstacao);
+            if (data.nomeLinha != NULL) free(data.nomeLinha);
+        }
+
+        // Se chegou no fim do arquivo e o encontrouRegistro ainda é 0, a busca falhou
+        if (!encontrouRegistro) {
+            printf("Registro inexistente.\n");
+        }
+    }
+
+    fclose(binFile);
 }
 
 /*
@@ -271,5 +545,96 @@ ENTRADA: 4 arquivoEntrada.bin RRN
 
 */
 
-void listTableRRN(char *arquivoEntrada, int RRN){
+void listTableRRN(char *arquivoEntrada, int RRN) {
+    // 1. Abre o arquivo binário para leitura
+    FILE *binFile = fopen(arquivoEntrada, "rb");
+    if (binFile == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    // 2. Lê o status do arquivo
+    char status;
+    fread(&status, sizeof(char), 1, binFile);
+    if (status == '0') {
+        printf("Falha no processamento do arquivo.\n");
+        fclose(binFile);
+        return;
+    }
+
+    // 3. Calcula o byte offset e pula direto para o registro desejado
+    int byteOffset = HEADER_SIZE + (RRN * REGISTER_SIZE);
+    fseek(binFile, byteOffset, SEEK_SET);
+
+    // 4. Tenta ler o status de removido. 
+    // Se o fread retornar algo diferente de 1, o RRN está além do fim do arquivo.
+    char removido;
+    if (fread(&removido, sizeof(char), 1, binFile) != 1 || removido == '1') {
+        printf("Registro inexistente.\n");
+        fclose(binFile);
+        return;
+    }
+
+    // 5. Se o registro existe e não está removido, extrai e imprime
+    DataRecord data;
+    data.removido = removido; 
+    
+    // A) Ler os próximos campos de tamanho fixo
+    fread(&data.proximo, sizeof(int), 1, binFile);
+    fread(&data.codEstacao, sizeof(int), 1, binFile);
+    fread(&data.codLinha, sizeof(int), 1, binFile);
+    fread(&data.codProxEstacao, sizeof(int), 1, binFile);
+    fread(&data.distProxEstacao, sizeof(int), 1, binFile);
+    fread(&data.codLinhaIntegra, sizeof(int), 1, binFile);
+    fread(&data.codEstIntegra, sizeof(int), 1, binFile);
+
+    // B) Ler o tamNomeEstacao e a string nomeEstacao
+    fread(&data.tamNomeEstacao, sizeof(int), 1, binFile);
+    if (data.tamNomeEstacao > 0) {
+        data.nomeEstacao = (char *)malloc((data.tamNomeEstacao + 1) * sizeof(char));
+        fread(data.nomeEstacao, sizeof(char), data.tamNomeEstacao, binFile);
+        data.nomeEstacao[data.tamNomeEstacao] = '\0'; 
+    } else {
+        data.nomeEstacao = NULL;
+    }
+
+    // C) Ler o tamNomeLinha e a string nomeLinha
+    fread(&data.tamNomeLinha, sizeof(int), 1, binFile);
+    if (data.tamNomeLinha > 0) {
+        data.nomeLinha = (char *)malloc((data.tamNomeLinha + 1) * sizeof(char));
+        fread(data.nomeLinha, sizeof(char), data.tamNomeLinha, binFile);
+        data.nomeLinha[data.tamNomeLinha] = '\0';
+    } else {
+        data.nomeLinha = NULL;
+    }
+
+    // E) Imprimir os dados formatados tratando os NULOS
+    printf("%d ", data.codEstacao);
+
+    if (data.nomeEstacao != NULL) printf("%s ", data.nomeEstacao);
+    else printf("NULO ");
+
+    if (data.codLinha == -1) printf("NULO ");
+    else printf("%d ", data.codLinha);
+
+    if (data.nomeLinha != NULL) printf("%s ", data.nomeLinha);
+    else printf("NULO ");
+
+    if (data.codProxEstacao == -1) printf("NULO ");
+    else printf("%d ", data.codProxEstacao);
+
+    if (data.distProxEstacao == -1) printf("NULO ");
+    else printf("%d ", data.distProxEstacao);
+
+    if (data.codLinhaIntegra == -1) printf("NULO ");
+    else printf("%d ", data.codLinhaIntegra);
+
+    if (data.codEstIntegra == -1) printf("NULO\n");
+    else printf("%d\n", data.codEstIntegra);
+
+    // F) Liberar a memória das strings alocadas nesta iteração
+    if (data.nomeEstacao != NULL) free(data.nomeEstacao);
+    if (data.nomeLinha != NULL) free(data.nomeLinha);
+
+    fclose(binFile);
 }
