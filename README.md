@@ -3,7 +3,7 @@
 
 Este projeto consiste no desenvolvimento de um sistema de gerenciamento de dados de transporte público, permitindo a conversão de arquivos CSV para um formato binário customizado, além da listagem e busca eficiente de registros.
 
-O sistema foi projetado para garantir a integridade dos dados e o acesso rápido via RRN (Relative Record Number).
+O sistema foi projetado para garantir a integridade dos dados e o acesso rápido via RRN.
 
 ---
 
@@ -13,7 +13,7 @@ O programa processa registros contendo informações detalhadas sobre as estaç�
 
 1. **Geração de Arquivo Binário (`createTable`):**
    - Converte um arquivo `.csv` em um arquivo binário `.bin`.
-   - Utiliza registros de **tamanho fixo (128 bytes)** para otimização de busca.
+   - Utiliza registros de **tamanho fixo (80 bytes)** para otimização de busca.
    - Implementa um **Cabeçalho (Header)** de 17 bytes para controle de status e metadados.
    - Tratamento de campos variáveis e preenchimento de bytes excedentes com o caractere `$`.
 
@@ -37,9 +37,9 @@ A organização dos arquivos segue a estrutura abaixo:
 │   ├── functions.c # Lógica principal das funcionalidades
 │   ├── functions.h # Protótipos e definições
 │   ├── structs.h   # Definições das estruturas HeaderRecord e DataRecord
-│   ├── utils.c     # Funções auxiliares (binarioNaTela, leitura de strings)
-│   └── utils.h
-├── src/            # Ponto de entrada
+│   ├── utils.c     # Funções auxiliares (binarioNaTela, leitura de strings, ...)
+│   └── utils.h     # Protótipos das funções auxiliares
+├── src/            
 │   └── programaTrab.c # Função main e controle de fluxo
 ├── data/           # Arquivos de dados (.csv e .bin)
 └── Makefile        # Automação de compilação, execução e empacotamento

@@ -8,33 +8,34 @@
 #include "../modules/functions.h"
 
 int main() {
-    int funcionalidade;
+    int func;
     
-    // Leitura do código da funcionalidade solicitada
-    if (scanf("%d", &funcionalidade) != 1) {
-        return 0; // Encerra execução caso o buffer esteja vazio ou inválido
+    // Leitura do codigo da funcionalidade solicitada
+    if (scanf("%d", &func) != 1) {
+        return 0; // Encerra execucao se o ocorrer erro ao ler a opcao de funcionalidade
     }
 
+    // Criacao das variaveis do nome dos arquivos
     char arquivoEntrada[100];
     char arquivoSaida[100];
 
-    // Roteamento para a funcionalidade correspondente
-    switch (funcionalidade) {
+    // Associar a funcionalidade lida com a funcao correspondente
+    switch (func) {
         
         case 1:
-            // [1] - createTable: Conversão de CSV para Binário
+            // [1] - createTable
             scanf("%s %s", arquivoEntrada, arquivoSaida);
             createTable(arquivoEntrada, arquivoSaida);
             break;
 
         case 2:
-            // [2] - listTable: Full Table Scan (Varredura Sequencial)
+            // [2] - listTable
             scanf("%s", arquivoEntrada);
             listTable(arquivoEntrada);
             break;
 
         case 3:
-            // [3] - listTableWhere: Busca Dinâmica O(n) por múltiplos critérios
+            // [3] - listTableWhere
             {
                 int n; 
                 scanf("%s %d", arquivoEntrada, &n);
@@ -43,16 +44,16 @@ int main() {
             break;
 
         case 4:
-            // [4] - listTableRRN: Busca Direta O(1) via Relative Record Number
+            // [4] - listTableRRN
             {
-                int rrnBusca;
-                scanf("%s %d", arquivoEntrada, &rrnBusca);
-                listTableRRN(arquivoEntrada, rrnBusca);
+                int RRN;
+                scanf("%s %d", arquivoEntrada, &RRN);
+                listTableRRN(arquivoEntrada, RRN);
             }
             break;
 
         default:
-            // Funcionalidade não mapeada
+            // Funcionalidade nao existente
             break;
     }
 

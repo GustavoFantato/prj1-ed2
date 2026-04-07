@@ -7,20 +7,29 @@
 #include <ctype.h>
 #include "structs.h"
 
-// Funções fornecidas pelos professores
-void binarioNaTela(char *arquivo);
-void ScanQuoteString(char *str);
+// Prototipos das funcoes utilitarias
 
-// Manipulação e extração de dados do CSV
+// Utilizadas na funcionalidade [1]
+void binarioNaTela(char *arquivo);
+
 char *readCSVLine(char line[], int line_size, FILE *csvFile);
-char *parseCSVField(char *line, int index);
+
 int verifyIfNullField(char *field);
 
-// Mapeamento de dados da string para a Struct binária
 void switchDataRecord(DataRecord *data, int i, char *field);
 
-// Controle de metadados do Cabeçalho (Valores Únicos)
 void verifyIfDiffStation(char *name, char ***diffStationNames, int *stationsQtd);
+
 void verifyIfDiffPair(int orig, int dest, Par **listPar, int *nPares);
+
+
+// Utilizadas na funcionalidade [3]
+
+void ScanQuoteString(char *str);
+
+int getValue(char *valor);
+
+int checkStringMatch(char *data_string, char *valor_busca);
+
 
 #endif

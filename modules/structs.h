@@ -1,63 +1,67 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
-// Constantes arquiteturais de dimensionamento do arquivo binário
-#define REGISTER_SIZE 80      // Tamanho físico em bytes de um registro de dados no disco
-#define HEADER_SIZE 17        // Tamanho físico em bytes do cabeçalho
-#define FIX_SIZE_FIELDS 37    // Soma dos bytes fixos do registro (char + int + 6*int + 2*int)
-#define REGISTER_QTD 8        // Quantidade total de campos manipulados por registro
+#define REGISTER_SIZE 80 // Tamanho total dos registros de dados
+#define HEADER_SIZE 17 // Tamanho total do registro de cabecalho        
+#define FIX_SIZE_FIELDS 37 // Tamanho total dos campos de tamanho fixo
+#define REGISTER_QTD 8 // Quantidade campos de cada registro de dados
+
 
 /*
- * Estrutura do Cabeçalho (17 bytes)
- * Gerencia os metadados do arquivo binário, garantindo o controle de integridade 
- * e fornecendo o estado atualizado (proxRRN, totais) em tempo de execução O(1).
- */
+ # Registro de cabecalho - 17 bytes totais #
+
+ Observacoes:
+ 1- O registro de cabecalho deve seguir estritamente a ordem definida abaixo
+ 2- Os campos são de tamanhos fixos. Logo, os valores que forem armazenados não devem ser finalizados por '\0'
+
+*/
+
 typedef struct headerRecord {
-    char status;         // '0' (Arquivo aberto/inconsistente) ou '1' (Fechado/consistente)
-    int topo;            // Byte offset da pilha de registros logicamente removidos (-1 se vazia)
-    int proxRRN;         // RRN do próximo slot disponível no final do arquivo
-    int nroEstacoes;     // Controle da quantidade de estações únicas
-    int nroParesEstacao; // Controle de pares únicos (Origem -> Destino)
+    char status; // Consistencia do arquivo. '0' para inconsistente e '1' para consistente
+    int topo;  // byte offset de um registro logicamente removido. Inicializado com -1         
+    int proxRRN; // proximo RRN disponivel         
+    int nroEstacoes; // quantidade de estacoes diferentes
+    int nroParesEstacao; // quantidade de pares (CodEstacao, CodProxEstacao) diferentes que estao armazenados no arquivo de dados
 } HeaderRecord;
 
 /*
- * Estrutura do Registro de Dados (80 bytes no disco)
- * A ordem dos atributos nesta struct foi projetada para refletir exatamente 
- * a ordem física de escrita/leitura sequencial no arquivo binário.
- */
-typedef struct dataRecord {
-    // --- Controle de Remoção Lógica ---
-    char removido;       // '0' (Registro Ativo) ou '1' (Logicamente Removido)
-    int proximo;         // RRN do próximo registro removido (-1 se não houver)
+# Registro de Dados - 80 bytes #
+-> Campos de tamanhos fixo e variáveis
+-> Para os de tamanho variável deve ser usado o método de indicador de tamanho
+-> Campos nulos são representados por espaços em branco
 
-    // --- Campos de Tamanho Fixo ---
-    // Valores NULOS são armazenados fisicamente como -1.
-    int codEstacao;      // Chave (Nunca é nulo)
-    int codLinha;
-    int codProxEstacao;
-    int distProxEstacao;
+Observacoes:
+1. Cada registro deve seguir a ordem definida na sua representacao grafica (dado no documento de instrucoes do projeto)
+2. As strings de tamanho variavel sao identificadas pelo seu tamanho, nao devendo ser finalizada com '\0'
+3. Os campos codEstacao e nomeEstacao nao aceitam valores nulos. Os demais aceitam. O arquivo com os dados de entrada ja garante essas caracteristicas
+    3.1. Para os campos de tamanho fixo, os valores nulos devem ser representados por -1
+    3.2 Para os campos de tamanho variavel, armazenar um valor nulo significa armazenar o tamanho zero no indicador de tamanho 
+*/
+
+typedef struct dataRecord {
+
+    char removido;       
+    int proximo;   
+
+
+    int codEstacao; 
+    int codLinha; 
+    int codProxEstacao; 
+    int distProxEstacao; 
     int codLinhaIntegra;
     int codEstIntegra;
 
-    // --- Campos de Tamanho Variável ---
-    // Valores NULOS possuem indicador de tamanho igual a 0. 
-    // Em memória secundária, não recebem o caractere terminador '\0'.
-    int tamNomeEstacao;  // Indicador de tamanho
-    char *nomeEstacao;   // Ponteiro para string dinâmica na RAM
+    int tamNomeEstacao; // Indicador de tamanho
+    char *nomeEstacao;   
 
-    int tamNomeLinha;    // Indicador de tamanho
-    char *nomeLinha;     // Ponteiro para string dinâmica na RAM
+    int tamNomeLinha; // Indicador de tamanho
+    char *nomeLinha;    
 } DataRecord;
 
-/*
- * Estrutura Auxiliar (Transiente)
- * Existe apenas em memória principal (RAM) para apoiar a lógica de contagem 
- * de pares únicos (Origem-Destino) durante a extração do CSV. 
- * Não é gravada diretamente no disco.
- */
+// Struct utilizada na funcionalidade [1], para controle dos pares de estacoes diferentes, para o armazenamento do nroParesEstacao no header
 typedef struct par {
-    int orig;
-    int dest;
+    int orig; // origem (CodEstacao)
+    int dest; // destino (CodProxEstacao)
 } Par;
 
 #endif
