@@ -43,14 +43,6 @@ char *readCSVLine(char line[], int line_size, FILE *csvFile){
     return fgets(line, line_size, csvFile); // Se chega ao fim ja retorna NULL naturalmente
 }
 
-// Verifica se o field da linha do CSV eh nulo
-int verifyIfNullField(char *field){
-    if (field == NULL || field[0] == '\0'){
-        return 1;
-    }
-    return 0;
-}
-
 // Switch para atribuir os campos do data record de acordo com o index do campo lido do CSV, ja que a ordem dos campos no CSV eh fixa e conhecida
 void switchDataRecord(DataRecord *data, int i, char *field){
     switch(i){

@@ -14,8 +14,6 @@ void binarioNaTela(char *arquivo);
 
 char *readCSVLine(char line[], int line_size, FILE *csvFile);
 
-int verifyIfNullField(char *field);
-
 void switchDataRecord(DataRecord *data, int i, char *field);
 
 void verifyIfDiffStation(char *name, char ***diffStationNames, int *stationsQtd);
